@@ -1,122 +1,25 @@
 import { useState } from 'react'
-import heroImg from './assets/hero.png'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
+import data from './data/pokedex-data.json'
+import { PokemonImage, Stats, Types } from './components/Pokemon.jsx'
 import './App.css'
 
-function App() {
-  const [count, setCount] = useState(0)
-
-  return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
-
-      <div className="ticks"></div>
-
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+export default function App() {
+  const [query, setQuery] = useState('')
+  const [type, setType] = useState('')
+  const [selectedId, setSelectedId] = useState(1)
+  const [mode, setMode] = useState('pokemon')
+  const [trainerId, setTrainerId] = useState(1)
+  const search = query.trim().toLowerCase().replace(/^#/, '')
+  const list = data.pokemon.filter(p => (p.name.toLowerCase().includes(search) || (/^\d+$/.test(search) && p.id === Number(search))) && (!type || p.types.some(t => t.name === type)))
+  const selected = list.find(p => p.id === selectedId) || list[0]
+  const index = selected ? list.indexOf(selected) : -1
+  const trainer = data.trainers.find(t => t.id === trainerId)
+  function move(step) {
+    if (mode === 'trainers') {
+      const position = data.trainers.indexOf(trainer)
+      setTrainerId(data.trainers[(position + step + data.trainers.length) % data.trainers.length].id)
+    } else if (list.length) setSelectedId(list[(index + step + list.length) % list.length].id)
+  }
+  function openPokemon(id) { setQuery(''); setType(''); setSelectedId(id); setMode('pokemon') }
+  return <main className="workbench"><section className="device" aria-label="Pokédex interativa"><header className="device-head"><div className="sensor"><i /></div><div className="leds" aria-hidden="true"><i /><i /><i /></div><div className="device-name"><h1>POKÉDEX</h1><span>PERSONAL POKÉMON INDEX</span></div></header><div className="seam" aria-hidden="true"/><div className="device-body"><div className="screen-frame"><div className="screen-dots" aria-hidden="true"><i/><i/></div><div className="display"><div className="screen-top"><span>● {mode === 'pokemon' ? 'POKÉMON DATABASE' : 'TRAINER DATABASE'}</span><span>KANTO / 01</span></div><div className="screen-content">{mode === 'pokemon' ? selected ? <><div className="identity"><span>No. {String(selected.id).padStart(3,'0')}</span><span>REGISTRADO ✓</span></div><div className="specimen"><span className="crosshair top-left"/><PokemonImage key={selected.id} pokemon={selected}/><span className="crosshair bottom-right"/></div><div className="pokemon-heading"><h2>{selected.name}</h2><Types types={selected.types}/></div><Stats stats={selected.stats}/><p className="screen-caption">{data.trainers.filter(t => t.pokemonIds.includes(selected.id)).map(t => t.name).join(' · ') || 'SEM TREINADOR ASSOCIADO'}</p></> : <div className="no-result"><span>?</span><h2>Sem sinal</h2><p>Nenhum Pokémon encontrado.</p><button onClick={() => {setQuery('');setType('')}}>Limpar pesquisa</button></div> : <div className="trainer-view"><span className="identity">ARQUIVO DE TREINADOR / {String(trainer.id).padStart(2,'0')}</span><div className="trainer-emblem">{trainer.name.split(' ').map(n => n[0]).join('')}</div><h2>{trainer.name}</h2><p className="badges">✧ {trainer.badges} {trainer.badges === 1 ? 'INSÍGNIA' : 'INSÍGNIAS'}</p><h3>EQUIPE POKÉMON</h3><div className="team">{trainer.pokemonIds.map((id, i) => { const p = data.pokemon.find(p => p.id === id); return <button key={`${id}-${i}`} onClick={() => openPokemon(id)}><PokemonImage pokemon={p}/><span>{p.name}</span></button> })}</div></div>}</div><div className="screen-bottom"><span>{mode === 'pokemon' ? `${String(index + 1).padStart(3,'0')} / ${String(list.length).padStart(3,'0')}` : `${trainer.id} / ${data.trainers.length}`}</span><span>▰▰▰ BATTERY</span></div></div><div className="frame-bottom"><i className="red-light"/><span className="speaker" aria-hidden="true">━━━━<br/>━━━━<br/>━━━━</span></div></div><div className="control-deck"><div className="controls-main"><div className="mode-switch" aria-label="Modo de consulta"><button className={mode === 'pokemon' ? 'mode active' : 'mode'} aria-pressed={mode === 'pokemon'} onClick={() => setMode('pokemon')}>POKÉMON</button><button className={mode === 'trainers' ? 'mode active' : 'mode'} aria-pressed={mode === 'trainers'} onClick={() => setMode('trainers')}>TREINADORES</button></div><div className="input-panel"><label htmlFor="search">BUSCAR NOME / Nº</label><input id="search" value={query} placeholder="Ex.: Pikachu ou 025" disabled={mode !== 'pokemon'} onChange={e => setQuery(e.target.value)}/><label htmlFor="type">FILTRO DE TIPO</label><select id="type" value={type} disabled={mode !== 'pokemon'} onChange={e => setType(e.target.value)}><option value="">Todos os tipos</option>{data.types.map(t => <option key={t.id}>{t.name}</option>)}</select></div></div><div className="navigation"><div className="dpad"><button className="up" aria-label="Registro anterior" onClick={() => move(-1)}>▲</button><button className="left" aria-label="Registro anterior" onClick={() => move(-1)}>◀</button><span/><button className="right" aria-label="Próximo registro" onClick={() => move(1)}>▶</button><button className="down" aria-label="Próximo registro" onClick={() => move(1)}>▼</button></div><span className="control-label">NAVEGAR</span><button className="random-button" onClick={() => {openPokemon(data.pokemon[Math.floor(Math.random()*data.pokemon.length)].id)}}>SCAN</button><span className="control-label">ALEATÓRIO</span></div></div><div className="index-panel"><label htmlFor="index">{mode === 'pokemon' ? 'ÍNDICE DE ESPÉCIES' : 'ÍNDICE DE TREINADORES'}</label><select id="index" aria-label={mode === 'pokemon' ? 'Selecionar Pokémon' : 'Selecionar treinador'} value={mode === 'pokemon' ? selected?.id ?? '' : trainerId} onChange={e => mode === 'pokemon' ? setSelectedId(Number(e.target.value)) : setTrainerId(Number(e.target.value))}>{mode === 'pokemon' ? list.length ? list.map(p => <option key={p.id} value={p.id}>#{String(p.id).padStart(3,'0')} — {p.name}</option>) : <option value="">Nenhum resultado</option> : data.trainers.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}</select><span className="index-count" role="status">{mode === 'pokemon' ? `${list.length} REGISTROS ENCONTRADOS` : `${trainer.pokemonIds.length} POKÉMON NA EQUIPE`}</span></div><div className="device-foot"><span>Silph Co.</span><span>MODEL PX–151</span><span>◆</span></div></div><div className="hinge" aria-hidden="true"/></section><p className="desk-caption">POKÉDEX / REGIÃO DE KANTO<span>Pesquise, selecione e use o direcional para explorar.</span></p></main>
 }
-
-export default App
